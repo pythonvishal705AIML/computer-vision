@@ -26,45 +26,37 @@ class ObjectTracking:
         self.model = YOLO(weights_path).to(self.device)
         print(device)
         
-        # Load face detection model
         self.face_model = YOLO(r'yolov8n-face.pt').to(self.device)
 
         self.target_size = (640, 480)
         
-        # Define ROI line
         self.roi_line = [(0, self.target_size[1] // 2), (self.target_size[0], self.target_size[1] // 2)]
         
-        # Counters for in and out
         self.count_in = 0
         self.count_out = 0
-        
-        # Dictionary to store previous positions of tracked objects
+
         self.prev_positions = {}
         
-        # Dictionary to store detected persons' demographics
+
         self.detected_persons = {}
 
-        # Cumulative statistics
         self.gender_count = defaultdict(int)
         self.age_groups = defaultdict(int)
 
-        # Extract date and time from video filename
         self.start_datetime = self.extract_datetime_from_filename()
 
-        # CSV file setup
+
         self.csv_file = open('demographics_data.csv', 'w', newline='')
         self.csv_writer = csv.writer(self.csv_file)
         self.csv_writer.writerow(['Date', 'Timestamp', 'Footfall(In)', 'Footfall(Out)', 'Male Count', 'Female Count', '0-18', '19-24', '25-35', '36-55', '>55'])
 
-        # Frame count and FPS for time tracking
+
         self.frame_count = 0
-        self.fps = 30  # Assume 30 FPS, adjust if different
+        self.fps = 30
 
-        # Interval for writing to CSV (5 minutes)
-        self.csv_interval = 2 * 60 * self.fps  # 5 minutes * 60 seconds * fps
-
+        self.csv_interval = 2 * 60 * self.fps 
     def __del__(self):
-        # Close the CSV file only if it exists
+
         if hasattr(self, 'csv_file'):
             self.csv_file.close()
 
@@ -135,11 +127,9 @@ class ObjectTracking:
                             else:
                                 self.count_out += 1
                                 logging.info(f"Person {id} exited. Total out: {self.count_out}")
-                    
-                    # Update previous position
+
                     self.prev_positions[id] = center_point
-                    
-                    # Display demographics if available
+
                     if id in self.detected_persons:
                         demographics = self.detected_persons[id]
                         cv2.putText(
@@ -166,16 +156,14 @@ class ObjectTracking:
         except Exception as e:
             logging.error(f"Error processing frame: {e}", exc_info=True)
 
-        # Draw ROI line
+
         cv2.line(frame, self.roi_line[0], self.roi_line[1], (0, 255, 0), 2)
-        
-        # Display counters and video time
+
         current_time = self.start_datetime + timedelta(seconds=self.frame_count/self.fps)
         cv2.putText(frame, f"Time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(frame, f"In: {self.count_in}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         cv2.putText(frame, f"Out: {self.count_out}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-        # Write to CSV every 5 minutes
         if self.frame_count % self.csv_interval == 0:
             self.write_to_csv(current_time)
 
@@ -193,8 +181,7 @@ class ObjectTracking:
                 age_class = self.classify_age(age)
                 gender = analysis[0]['dominant_gender']
                 self.detected_persons[id] = {'age_class': age_class, 'gender': gender}
-                
-                # Update cumulative statistics
+
                 self.gender_count[gender] += 1
                 self.age_groups[age_class] += 1
                 logging.info(f"Detected person {id}: Gender - {gender}, Age - {age_class}")
@@ -223,7 +210,7 @@ class ObjectTracking:
             self.age_groups['>55']
         ]
         self.csv_writer.writerow(row)
-        self.csv_file.flush()  # Ensure data is written to file
+        self.csv_file.flush() 
         logging.info(f"Written to CSV: {row}")
 
     def process_video(self, chunk_size=100):
