@@ -58,8 +58,7 @@ def extract_date_time_from_filename(filename):
         return datetime.strptime(date_time_str, "%Y%m%d%H%M%S")
     else:
         logging.warning(f"Could not extract date and time from filename: {filename}")
-        return datetime.now()  # Return current date and time as a fallback
-
+        return datetime.now()  
 def main():
     video_source = r"rtsp://xsens:admin12345@192.168.0.100:554/Streaming/channels/301"
     cap = cv2.VideoCapture(video_source)
